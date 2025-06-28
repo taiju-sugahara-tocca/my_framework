@@ -13,6 +13,8 @@
         <input type="password" id="password" name="password" value=""><br>
 
         <input type="submit" value="登録">
+
+        <p>まだアカウントをお持ちでない方は<a href="/register">こちら</a>から登録してください。</p>
     </form>
 
 </body>
