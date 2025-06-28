@@ -8,6 +8,8 @@ class Routing
         $authMiddle = 'App\Middleware\RouteMiddleware\AuthMiddleware';
         //*同じパスは設定できない設定（配列のkeyが同じになるため）
         $routingList = [
+            // → トップ画面
+            '#^/$#' => ["GET", 'App\Controller\Post\PostController', 'index', [$authMiddle]],
             // /login → ログイン画面
             '#^/login$#' => ["GET", 'App\Controller\Login\LoginController', 'index'],
             // /login/authenticate → ログイン処理
