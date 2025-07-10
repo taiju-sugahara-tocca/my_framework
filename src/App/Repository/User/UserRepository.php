@@ -11,14 +11,14 @@ class UserRepository implements UserRepositoryInterface
 
     public function authFindByEmail(string $email): ?UserData
     {
-        $rows = UserData::query()->select("id, email, password")->where("email", "=", $email)->get();
+        $rows = UserData::query()->select(["id, email, password"])->where("email", "=", $email)->get();
         $user = UserData::getData($rows);
         return $user;
     }
 
     public function findById(int $id): ?UserData
     {
-        $rows = UserData::query()->select("id, name, email")->where("id", "=", $id)->get();
+        $rows = UserData::query()->select(["id, name, email"])->where("id", "=", $id)->get();
         $user = UserData::getData($rows);
         return $user;
     }

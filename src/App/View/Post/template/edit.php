@@ -5,6 +5,14 @@
     <h1>投稿登録・編集</h1>
 
     <form method="post" action="/posts/save">
+        <?php if (!empty($errors)): ?>
+            <div style="color: red;">
+                <?php foreach ($errors as $error): ?>
+                    <p><?php echo htmlspecialchars($error) ?></p>
+                <?php endforeach; ?>
+            </div>
+        <?php endif; ?>
+
         <input type="hidden" name="id" value="<?php echo htmlspecialchars(isset($post) ? $post->getId() : "") ?>">
         <label for="id">ID</label>
         <?php echo htmlspecialchars(isset($post) ? $post->getId() : "") ?><br>

@@ -54,4 +54,20 @@ abstract class Model{
         return static::createInstancefromArray($rows[0]);
     }
 
+    /**
+     * テーブル名のプレフィックスを持つカラムを抽出する
+     * 例: 'post_data_' プレフィックスを持つカラムを抽出
+     */
+    public static function extractPrefixedArray(array $row): array {
+        $prefix = static::table() . '_';
+        $result = [];
+        $len = strlen($prefix);
+        foreach ($row as $key => $value) {
+            if (strpos($key, $prefix) === 0) {
+                $result[substr($key, $len)] = $value;
+            }
+        }
+        return $result;
+    }
+
 }

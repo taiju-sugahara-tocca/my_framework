@@ -4,7 +4,7 @@ namespace Framework;
 class Session
 {
     private static $instance;
-    private $sessionModel;
+    public $sessionModel;
     public $session_id;
     public $user_id;
     public $user = null; //アプリ側でユーザ情報をセットするための変数
@@ -75,5 +75,23 @@ class Session
             }
         }
         return false;
+    }
+
+    public function getPayload($payload): array
+    {
+        $data = [];
+        $sessionModel = $this->sessionModel->getSessionById($this->session_id);
+        if ($sessionModel) {
+            $data = $sessionModel->getPayload($payload);
+        }
+        return $data;
+    }
+
+    public function setPayload($payload, $value): void
+    {
+        $sessionModel = $this->sessionModel->getSessionById($this->session_id);
+        if ($sessionModel) {
+            $sessionModel->setPayload($payload, $value);
+        }
     }
 }

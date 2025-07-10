@@ -9,7 +9,12 @@ class QueryBuilder{
     /**
      * Select条件
      */
-    protected $selectCondition = "";
+    protected $selectCondition = [];
+
+    /**
+     * Select Raw条件
+     */
+    protected $selectRawCondition = "";
 
     /**
      * From条件
@@ -42,6 +47,16 @@ class QueryBuilder{
     protected $likeCondition = [];
 
     /**
+     * Group By条件
+     */
+    protected $groupByCondition = [];
+
+    /**
+     * Having条件
+     */
+    protected $havingCondition = [];
+
+    /**
      * Offset条件
      */
     protected $offsetCondition = 0;
@@ -55,11 +70,6 @@ class QueryBuilder{
      * Order By条件
      */
     protected $orderByColumnCondition = [];
-
-    /**
-     * 生のSQL条件
-     */
-    protected $rawCondition = "";
 
     /**
      * ソート可能カラム
@@ -100,9 +110,9 @@ class QueryBuilder{
 
     /**
      * select句を使ってデータを取得する
-     * @param string $columnList
+     * @param array $columnList
      */
-    public function select(string $columnList)
+    public function select(array $columnList)
     {
         $this->selectCondition = $columnList;
         return $this;
@@ -163,6 +173,28 @@ class QueryBuilder{
     }
 
     /**
+     * group by句を使ってデータを取得する
+     * @param array $columns
+     */
+    public function groupBy(array $columns)
+    {
+        $this->groupByCondition = $columns;
+        return $this;
+    }
+
+    /**
+     * having句を使ってデータを取得する
+     * @param string $column
+     * @param string $operator
+     * @param mixed $value
+     */
+    public function having(string $column, string $operator, $value)
+    {
+        $this->havingCondition[] = [$column, $operator, $value];
+        return $this;
+    }
+
+    /**
      * offset句を使ってデータを取得する
      * @param int $offset
      */
@@ -194,11 +226,34 @@ class QueryBuilder{
     }
 
     /**
-     * 生のSQLを実行する
+     * inner join句を使ってデータを取得する
+     * @param string $table
+     * @param string $condition
      */
-    public function raw(string $sql)
+    public function innerJoin(string $table, string $condition)
     {
-        $this->rawCondition = $sql;
+        $this->innerJoinCondition[] = [$table, $condition];
+        return $this;
+    }
+
+    /**
+     * left join句を使ってデータを取得する
+     * @param string $table
+     * @param string $condition
+     */
+    public function leftJoin(string $table, string $condition)
+    {
+        $this->leftJoinCondition[] = [$table, $condition];
+        return $this;
+    }
+
+    /**
+     * select Raw句を使ってデータを取得する
+     * @param string $raw
+     */
+    public function selectRaw(string $raw)
+    {
+        $this->selectRawCondition = $raw;
         return $this;
     }
 
@@ -207,13 +262,21 @@ class QueryBuilder{
      */
     protected function selectExec()
     {
-        $sql = "";
-        if( !empty($this->selectCondition) ) {
-            $sql .= "SELECT " . $this->selectCondition . " ";
-        } else {
-            $sql .= "SELECT * " ;
+        $sql = "SELECT ";
+        $columns = [];
+
+        if (!empty($this->selectCondition)) {
+            $columns[] = implode(", ", $this->selectCondition);
         }
-        $sql .= " FROM " . $this->fromCondition . " ";
+        if (!empty($this->selectRawCondition)) {
+            $columns[] = $this->selectRawCondition;
+        }
+        if (empty($columns)) {
+            $sql .= "* ";
+        } else {
+            $sql .= implode(", ", $columns) . " ";
+        }
+        $sql .= "FROM " . $this->fromCondition . " ";
         $this->sql = $sql;
     }
 
@@ -284,6 +347,37 @@ class QueryBuilder{
         }
     }
 
+    /**
+     * group by実行
+     */
+    protected function groupByExec()
+    {
+        if( !empty($this->groupByCondition) ) {
+            $this->sql .= " GROUP BY " . implode(", ", $this->groupByCondition) . " ";
+        }
+    }
+
+    /**
+     * having実行
+     */
+    protected function havingExec()
+    {
+        if( !empty($this->havingCondition) ) {
+            foreach ($this->havingCondition as $index => $condition) {
+                $column = $condition[0];
+                $operator = $condition[1];
+                $value = $condition[2];
+                if( $index === 0 ) {
+                    $this->sql .= " HAVING ";
+                } else {
+                    $this->sql .= " AND ";
+                } 
+                $this->sql .= " $column $operator ? ";
+                $this->bindParams[] = $value;
+            }
+        }
+    }
+
 
     /**
      * offset実行
@@ -333,6 +427,34 @@ class QueryBuilder{
     }
 
     /**
+     * Inner Join実行
+     */
+    protected function innerJoinExec()
+    {
+        if( !empty($this->innerJoinCondition) ) {
+            foreach ($this->innerJoinCondition as $join) {
+                $table = $join[0];
+                $condition = $join[1];
+                $this->sql .= " INNER JOIN " . $table . " ON " . $condition . " ";
+            }
+        }
+    }
+
+    /**
+     * Left Join実行
+     */
+    protected function leftJoinExec()
+    {
+        if( !empty($this->leftJoinCondition) ) {
+            foreach ($this->leftJoinCondition as $join) {
+                $table = $join[0];
+                $condition = $join[1];
+                $this->sql .= " LEFT JOIN " . $table . " ON " . $condition . " ";
+            }
+        }
+    }
+
+    /**
      * Insert実行
      * @param array $data
      */
@@ -377,23 +499,19 @@ class QueryBuilder{
     {
         $db = DBConnection::getConnection();
         $this->selectExec();
+        $this->innerJoinExec();
+        $this->leftJoinExec();
         $this->whereExec();
         $this->whereInExec();
+        $this->groupByExec();
+        $this->havingExec();
         $this->likeExec();
         $this->orderByExec();
         $this->limitExec();
         $this->offsetExec(); //offsetはlimitの後に実行する必要がある
 
-
-        //[TODO] Raw SQLの実行
-        //[TODO] Inner Joinの実行
-        //[TODO] Left Joinの実行
-
-        // if( !empty($this->innerJoinCondition) ) {
-        //     foreach ($this->innerJoinCondition as $join) {
-        //         $sql .= " INNER JOIN " . $join['table'] . " ON " . $join['condition'] . " ";
-        //     }
-        // }
+        //[TODO] Raw SQLの実行・・・selectRawやorderByRawなどセクションごとのRawを作る設計にする（case文はselectなどに埋め込む形）。全体のRawは作成しない。
+        //selectRawだけ実装すればとりあえずよしとする。
         
         $stm= $db->prepare($this->sql);
         $stm->execute($this->bindParams);

@@ -2,6 +2,14 @@
 <html>
 <head><title>投稿一覧</title></head>
 <body>
+    <?php if (!empty($messages)): ?>
+            <div style="width: 100% ; background-color: #f0f0f0; padding: 5px; border: 1px solid #ccc; margin-bottom: 20px;">
+                <?php foreach ($messages as $message): ?>
+                    <p><?php echo htmlspecialchars($message["text"]) ?></p>
+                <?php endforeach; ?>
+            </div>
+        <?php endif; ?>
+
     <h1>投稿一覧</h1>
     <p>ユーザ名：<?php echo htmlspecialchars($user->getName())?></p>
     <p><a href="/logout">ログアウト</a><p>
@@ -40,16 +48,17 @@
 
     <hr>
 
-    <?php foreach ($posts as $post): ?>
+    <?php foreach ($posts as $postDto): ?>
         <div>
-            <?php echo "Post ID: " . htmlspecialchars($post->getId()) ?> <br>
-            <?php echo "Title: " . htmlspecialchars($post->getTitle()) ?> <br>
-            <?php echo "Content: " . nl2br(htmlspecialchars($post->getContent())) ?> <br>
-            <?php echo "User ID: " . htmlspecialchars($post->getUserId()) ?> <br>
-            <a href="/posts/show/<?php echo htmlspecialchars($post->getId()) ?>">詳細</a> |
-            <?php if ($post->getUserId() == $user->getId()): ?>
-                <a href="/posts/edit/<?php echo htmlspecialchars($post->getId()) ?>">編集</a> |
-                <form method="post" action="/posts/delete/<?php echo htmlspecialchars($post->getId()) ?>" style="display:inline;">
+            <?php echo "Post ID: " . htmlspecialchars($postDto->post->getId()) ?> <br>
+            <?php echo "Title: " . htmlspecialchars($postDto->post->getTitle()) ?> <br>
+            <?php echo "type: " . htmlspecialchars($postDto->title_length_type) ?> <br>
+            <?php echo "Content: " . nl2br(htmlspecialchars($postDto->post->getContent())) ?> <br>
+            <?php echo "登録ユーザ名: " . nl2br(htmlspecialchars($postDto->post->getUser()->getName())) ?> <br>
+            <a href="/posts/show/<?php echo htmlspecialchars($postDto->post->getId()) ?>">詳細</a> |
+            <?php if ($postDto->post->getUserId() == $user->getId()): ?>
+                <a href="/posts/edit/<?php echo htmlspecialchars($postDto->post->getId()) ?>">編集</a> |
+                <form method="post" action="/posts/delete/<?php echo htmlspecialchars($postDto->post->getId()) ?>" style="display:inline;">
                     <input type="submit" value="削除">
                 </form>
             <?php endif; ?>

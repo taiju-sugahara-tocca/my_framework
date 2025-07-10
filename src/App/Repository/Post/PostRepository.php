@@ -5,8 +5,11 @@ namespace App\Repository\Post;
 use App\Interface\Repository\Post\PostRepositoryInterface;
 use App\Model\Post\PostData;
 use App\DB\DBConnection;
+use App\Model\User\UserData;
+use App\Model\Post\PostDataFactory;
 use Framework\QueryBuilder;
 use Framework\Request;
+use App\Dto\Post\PostWithTitleLengthTypeDto;
 
 class PostRepository implements PostRepositoryInterface
 {
@@ -18,9 +21,19 @@ class PostRepository implements PostRepositoryInterface
         $sort_direction = $request->get('sort_direction', 'ASC');
 
         $builder = PostData::query();
+        $select_columns = [
+            'post_data.id AS post_data_id',
+            'post_data.title AS post_data_title',
+            'post_data.content AS post_data_content',
+            'post_data.user_id AS post_data_user_id',
+            'user_data.name AS user_data_name'
+        ];
+        $builder->select($select_columns)
+        ->selectRaw('CASE WHEN LENGTH(post_data.title) > 3 THEN "long" ELSE "short" end AS title_length_type')
+        ->leftJoin('user_data', 'post_data.user_id = user_data.id');
         
         //filter
-        $builder = $this->filterPosts($builder, $request);
+        $builder = $this->filterPosts($builder, $request);     
         //offset/limit
         if (!empty($limit)) {
             $builder->limit($limit);
@@ -35,7 +48,16 @@ class PostRepository implements PostRepositoryInterface
 
         $rows = $builder->get();
 
-        $posts = PostData::getDatalist($rows);
+        $posts = [];
+        
+        if (!empty($rows)) {
+            foreach ($rows as $row) {
+                $post = PostDataFactory::createPostWithUser($row);
+                $title_length_type = $row['title_length_type'];
+                $postDto = new PostWithTitleLengthTypeDto($post,$title_length_type);
+                $posts[] = $postDto;
+            }
+        }
 
         return $posts;
     }
@@ -58,8 +80,19 @@ class PostRepository implements PostRepositoryInterface
 
     public function getPostById($id): ?PostData
     {
-        $rows = PostData::query()->where("id", "=", $id)->get();
-        $post = PostData::getData($rows);
+        $select_columns = [
+            'post_data.id AS post_data_id',
+            'post_data.title AS post_data_title',
+            'post_data.content AS post_data_content',
+            'post_data.user_id AS post_data_user_id',
+            'user_data.name AS user_data_name'
+        ];
+        $rows = PostData::query()->select($select_columns)
+        ->innerJoin('user_data', 'post_data.user_id = user_data.id')
+        ->where("post_data.id", "=", $id)->get();
+        $row = $rows[0] ?? null;
+
+        $post = PostDataFactory::createPostWithUser($row);
         return $post;
     }
 

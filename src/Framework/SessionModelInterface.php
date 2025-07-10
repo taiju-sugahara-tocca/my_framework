@@ -1,5 +1,6 @@
 <?php
 namespace Framework;
+use Framework\SessionPayloadInterface;
 
 interface SessionModelInterface
 {
@@ -12,4 +13,8 @@ interface SessionModelInterface
     public function getUserId(): ?int;
 
     public function deleteSessionByUserId(int $user_id): void;
+
+    public function getPayload(SessionPayloadInterface $payload): array;
+
+    public function setPayload(SessionPayloadInterface $payload, array $value): void;
 }
