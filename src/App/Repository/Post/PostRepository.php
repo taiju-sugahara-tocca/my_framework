@@ -43,6 +43,9 @@ class PostRepository implements PostRepositoryInterface
         }
         //sort
         if (!empty($sort_column)) {
+            if($sort_column === 'id') {
+                $sort_column = 'post_data.id'; // idが複数あるため考慮
+            } 
             $builder->orderBy($sort_column, $sort_direction);
         }
 

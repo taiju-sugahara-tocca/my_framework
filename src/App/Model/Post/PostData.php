@@ -34,7 +34,10 @@ class PostData extends Model
 
     protected static function standardSortable(): array
     {
-        return ['id', 'title'];
+        return [
+            'id', 'title',
+            'post_data.id', 'post_data.title', //joinしたとき用
+        ];
     }
 
     public function getId()
